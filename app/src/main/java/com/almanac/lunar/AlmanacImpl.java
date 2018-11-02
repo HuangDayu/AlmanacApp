@@ -8,10 +8,10 @@ public class AlmanacImpl implements Almanac {
 	private SunAndMoon sumAndMoon = null;
 	private String[] areas = null;
 	private Calendar calendar = null;
-	private DataBean dataBean = null;
+	private TimeBean dataBean = null;
 	private Port port = null;
 
-	public AlmanacImpl(DataBean dataBean) {
+	public AlmanacImpl(TimeBean dataBean) {
 		this.dataBean = dataBean;
 		this.calendar = dataBean.getCalendar();
 		this.port = new Port(Propt.getLatportProperties(), Propt.getLoogportProperties());
@@ -25,20 +25,20 @@ public class AlmanacImpl implements Almanac {
 		return TimeUtil.dateFormat(calendar, "yyyy年MM月dd日");
 	}
 
-    @Override
-    public String getDateFormer() {
-        return TimeUtil.dateFormat(calendar, "yyyy-MM-dd");
-    }
+	@Override
+	public String getDateFormer() {
+		return TimeUtil.dateFormat(calendar, "yyyy-MM-dd");
+	}
 
 	@Override
 	public String getTime() {
 		return TimeUtil.dateFormat(calendar, "HH时mm分ss秒SS毫秒");
 	}
 
-    @Override
-    public String getTimeFormer() {
-        return TimeUtil.dateFormat(calendar, "HH:mm:ss.SS");
-    }
+	@Override
+	public String getTimeFormer() {
+		return TimeUtil.dateFormat(calendar, "HH:mm:ss.SS");
+	}
 
 	@Override
 	public String getWeek() {
@@ -48,7 +48,9 @@ public class AlmanacImpl implements Almanac {
 	@Override
 	public String getPosition() {
 		// return areas[0] + " " + areas[1].substring(4, areas[1].length());
-		return dataBean.getProvince() + " " + dataBean.getArea();
+		String prov = dataBean.getProvince().replace("省", "");// 字符替代
+		String area = dataBean.getArea().replace("市", "").replace("区", "").replace("县", "").replaceAll("镇", "");
+		return  prov+ " " + area;
 	}
 
 	@Override

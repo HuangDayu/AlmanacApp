@@ -16,7 +16,8 @@ import android.widget.Toast;
 
 import com.almanac.lunar.Almanac;
 import com.almanac.lunar.AlmanacImpl;
-import com.almanac.lunar.DataBean;
+import com.almanac.lunar.TimeBean;
+import com.almanac.lunar.TimeUtil;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -37,8 +38,7 @@ public class MainActivity extends ListActivity {
         //super.onCreate(savedInstanceState);
         //setContentView(R.layout.activity_main);
         sharedPreferences = getSharedPreferences("AlmanacSetting", Context.MODE_PRIVATE);
-
-        adapter(new AlmanacImpl(instantDataBean()));
+        adapter(new AlmanacImpl(instantTimeBean()));
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -58,38 +58,55 @@ public class MainActivity extends ListActivity {
         super.onCreate(savedInstanceState);
     }
 
-    private DataBean instantDataBean() {
-        DataBean dataBean = null;
+    private TimeBean instantTimeBean() {
+        TimeBean timeBean = null;
+        String province = null, area = null, dateFormer = null, timeFormer = null;
         String date = sharedPreferences.getString("AlmanacDate", "");//默认值是空的
         String time = sharedPreferences.getString("AlmanacTime", "");
         String position = sharedPreferences.getString("AlmanacPosition", "");
+        if (null != almanac) {
+            province = almanac.getPosition().split(" ")[0];
+            area = almanac.getPosition().split(" ")[1];
+            dateFormer = almanac.getDateFormer();
+            timeFormer = almanac.getTimeFormer();
+        } else {
+            province = "广东省";
+            area = "徐闻县";
+            dateFormer = TimeUtil.getFormatDate("yyyy-MM-dd");
+            timeFormer = TimeUtil.getFormatDate("HH:mm:ss");
+        }
+        String code = null;
         try {
             if (!date.equals("") && !time.equals("") && !position.equals("")) {//111=7
-                dataBean = new DataBean(position, date + " " + time);
-            } else if (!date.equals("") && !time.equals("") && position.equals("")) {//110
-                dataBean = new DataBean("广东省徐闻县", date + " " + time);
-            } else
-
-
-
-            if (date.equals("") && time.equals("") && !position.equals("")) {
-                dataBean = new DataBean(position, Calendar.getInstance());
-            } else if (!date.equals("") && time.equals("") && position.equals("")) {
-                dataBean = new DataBean("广东省徐闻县", date + " " + almanac.getTimeFormer());
-            } else   if (!date.equals("") && time.equals("") && !position.equals("")) {
-                dataBean = new DataBean(position, date + " " + almanac.getTimeFormer());
-            } else if (date.equals("") && !time.equals("") && !position.equals("")) {
-                dataBean = new DataBean(position, almanac.getDateFormer() + " " + time);
-            } else if (date.equals("") && !time.equals("") && position.equals("")) {
-                dataBean = new DataBean("广东省徐闻县", almanac.getDateFormer() + " " + time);
-            } else {
-                dataBean = new DataBean("广东省徐闻县", Calendar.getInstance());
+                code = "111";
+                timeBean = new TimeBean(position, date + " " + time);
+            } else if (date.equals("") && !time.equals("") && !position.equals("")) {//011=6
+                code = "011";
+                timeBean = new TimeBean(position, dateFormer + " " + time);
+            } else if (!date.equals("") && time.equals("") && !position.equals("")) {//101=5
+                code = "101";
+                timeBean = new TimeBean(position, date + " " + timeFormer);
+            } else if (date.equals("") && time.equals("") && !position.equals("")) {//001=4
+                code = "001";
+                timeBean = new TimeBean(position, Calendar.getInstance());
+            } else if (!date.equals("") && !time.equals("") && position.equals("")) {//110=3
+                code = "110";
+                timeBean = new TimeBean(province, area, date, time);
+            } else if (date.equals("") && !time.equals("") && position.equals("")) {//010=2
+                code = "010";
+                timeBean = new TimeBean(province, area, dateFormer, time);
+            } else if (!date.equals("") && time.equals("") && position.equals("")) {//100=1
+                code = "100";
+                timeBean = new TimeBean(province, area, date, timeFormer);
+            } else {//000=0
+                code = "000";
+                timeBean = new TimeBean(province, area, Calendar.getInstance());
             }
         } catch (Exception e) {
-            showToast(e.getMessage());
-            dataBean = new DataBean("广东省徐闻县", Calendar.getInstance());
+            showToast("参数异常,code:" + code);
+            timeBean = new TimeBean(province, area, Calendar.getInstance());
         }
-        return dataBean;
+        return timeBean;
     }
 
     private void adapter(Almanac almanac1) {
@@ -190,7 +207,7 @@ public class MainActivity extends ListActivity {
                 }
                 //完成提交
                 editor.commit();
-                adapter(new AlmanacImpl(instantDataBean()));
+                adapter(new AlmanacImpl(instantTimeBean()));
             }
         });
         alertDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -216,7 +233,7 @@ public class MainActivity extends ListActivity {
     }
 
     private void showToast(String str) {
-        Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, str, Toast.LENGTH_LONG).show();
     }
 
     public void internetDialog(String title, String text) {

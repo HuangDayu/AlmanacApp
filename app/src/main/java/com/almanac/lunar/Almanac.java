@@ -7,7 +7,7 @@ public interface Almanac {
 	 * @return
 	 */
 	public String getDate();
-
+	
 	/***
 	 * 原格式日期
 	 * @return
@@ -20,7 +20,7 @@ public interface Almanac {
 	 * @return
 	 */
 	public String getTime();
-
+	
 	/**
 	 * 原格式时间
 	 * @return

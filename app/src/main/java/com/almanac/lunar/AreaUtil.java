@@ -8,8 +8,8 @@ public class AreaUtil {
 	 * @return
 	 */
 	public static String[] judgeArea(String prov, String area) {
-		prov = prov.replaceAll("省", "");// 字符替代
-		area = area.replaceAll("市", "").replaceAll("区", "").replaceAll("县", "").replaceAll("镇", "").replaceAll("乡", "");
+		prov = prov.replace("省", "");// 字符替代
+		area = area.replace("市", "").replace("区", "").replace("县", "").replace("镇", "").replace("乡", "");
 		String[] strsArea = null;
 		String Str_1 = null, Str_2 = null;
 		String[] province = { "天津", "TJ", "河北", "HE", "青海", "QH", "西藏", "XZ", "浙江", "ZJ", "重庆", "CQ", "河南", "HA", "福建",
