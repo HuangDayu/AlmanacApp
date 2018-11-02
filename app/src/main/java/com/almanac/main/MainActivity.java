@@ -64,15 +64,19 @@ public class MainActivity extends ListActivity {
         String time = sharedPreferences.getString("AlmanacTime", "");
         String position = sharedPreferences.getString("AlmanacPosition", "");
         try {
+            if (!date.equals("") && !time.equals("") && !position.equals("")) {//111=7
+                dataBean = new DataBean(position, date + " " + time);
+            } else if (!date.equals("") && !time.equals("") && position.equals("")) {//110
+                dataBean = new DataBean("广东省徐闻县", date + " " + time);
+            } else
+
+
+
             if (date.equals("") && time.equals("") && !position.equals("")) {
                 dataBean = new DataBean(position, Calendar.getInstance());
             } else if (!date.equals("") && time.equals("") && position.equals("")) {
                 dataBean = new DataBean("广东省徐闻县", date + " " + almanac.getTimeFormer());
-            } else if (!date.equals("") && !time.equals("") && position.equals("")) {
-                dataBean = new DataBean("广东省徐闻县", date + " " + time);
-            } else if (!date.equals("") && !time.equals("") && !position.equals("")) {
-                dataBean = new DataBean(position, date + " " + time);
-            } else if (!date.equals("") && time.equals("") && !position.equals("")) {
+            } else   if (!date.equals("") && time.equals("") && !position.equals("")) {
                 dataBean = new DataBean(position, date + " " + almanac.getTimeFormer());
             } else if (date.equals("") && !time.equals("") && !position.equals("")) {
                 dataBean = new DataBean(position, almanac.getDateFormer() + " " + time);
@@ -192,7 +196,20 @@ public class MainActivity extends ListActivity {
         alertDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                clearSetting();
+
+            }
+        });
+        alertDialog.setNeutralButton("清空", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                editText.setText("");
+                if (0 == i) {
+                    removeSetting("AlmanacDate");
+                } else if (1 == i) {
+                    removeSetting("AlmanacTime");
+                } else if (2 == i) {
+                    removeSetting("AlmanacPosition");
+                }
             }
         });
         alertDialog.show();
