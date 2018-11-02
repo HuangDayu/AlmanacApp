@@ -2,11 +2,12 @@
 
 ## 演示
 
-<figure class="third">
-    <img src="./ezgif.com-video-to-gif-1.gif">
-    <img src="./ezgif.com-video-to-gif-2.gif">
-    <img src="./ezgif.com-video-to-gif-3.gif">
-</figure>
+
+<div align="center">
+<img src="./ezgif.com-video-to-gif-1.gif" height="500px" width="250px" alt="设置日期" >
+<img src="./ezgif.com-video-to-gif-2.gif" height="500px" width="250px" alt="设置时间" >
+<img src="./ezgif.com-video-to-gif-3.gif" height="500px" width="250px" alt="设置位置" >
+</div>
 
 ## APP下载
 [点击下载](https://github.com/HuangDayu/AlmanacApp/raw/master/AlmanacApp.apk)
