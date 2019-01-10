@@ -34,6 +34,24 @@ public interface Almanac {
 	 */
 	public String getWeek();
 
+	/***
+	 * 西历
+	 * @return
+	 */
+	String getWesternCalendar();
+
+    /***
+     * 西历中文版 简短
+     * @return
+     */
+    String getWesternCalendarCN();
+
+	/***
+	 * 西历中文版 详细
+	 * @return
+	 */
+	String getWesternCalendarCND();
+
 	/**
 	 * 位置
 	 * 

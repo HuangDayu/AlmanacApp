@@ -123,7 +123,7 @@ public class TimeUtil {
 		String format = null;
 		if (str.contains(".") || str.contains("T") || str.contains("Z")) {
 			str = str.replace("T", " ").replaceAll("Z", "");
-			format = "yyyy-MM-dd HH:mm:ss.SS";
+			format = "yyyy-MM-dd HH:mm:ss.SSS";
 		} else if (str.contains("年") && 2 == str.split(":").length) {
 			format = "yyyy年MM月dd日 HH:mm";
 		} else if (str.contains("年")) {

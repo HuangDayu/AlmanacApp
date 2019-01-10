@@ -16,11 +16,12 @@ import android.widget.Toast;
 
 import com.almanac.lunar.Almanac;
 import com.almanac.lunar.AlmanacImpl;
+import com.almanac.lunar.HistoricalYear;
 import com.almanac.lunar.TimeBean;
 import com.almanac.lunar.TimeUtil;
 
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,76 +40,94 @@ public class MainActivity extends ListActivity {
         //setContentView(R.layout.activity_main);
         sharedPreferences = getSharedPreferences("AlmanacSetting", Context.MODE_PRIVATE);
         adapter(new AlmanacImpl(instantTimeBean()));
+        //点击事件
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 HashMap<String, String> itemMap = (HashMap<String, String>) mListView.getItemAtPosition(i);
                 String title = itemMap.get("title").replace(":", "");
                 String text = itemMap.get("text");
-                if (0 == i || 1 == i || 2 == i) {
-                    setDate(i, title, text);
-                } else if (36 == i) {
+                if (1 == i) {
+                    internetDialog(title, almanac.getWesternCalendarCND().replace(" ", "\n"));
+                } else if (8 == i) {
                     String s = text.split(" ")[2];
                     internetDialog(title, text + "，" + almanac.getSolarTermDoc(s));
+                } else if (4 == i) {
+                    internetDialog(title, "即中华历史朝代年号信息。\n" + HistoricalYear.getHY(getNH()));
+                } else if (6 == i) {
+                    internetDialog(title, "又称伊斯兰历。\n" + text);
+                } else if (2 == i) {
+                    internetDialog(title, "又称阴历。\n" + text);
+                } else if (5 == i) {
+                    internetDialog(title, "又称皇帝纪年。\n" + text);
+                } else if (9 == i) {
+                    internetDialog(title, text.replace(" ", "\n"));
                 } else {
                     internetDialog(title, text);
                 }
             }
         });
+        mListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
+            HashMap<String, String> itemMap = (HashMap<String, String>) mListView.getItemAtPosition(i);
+            String title = itemMap.get("title").replace(":", "");
+            String text = itemMap.get("text");
+            if (0 == i || 1 == i) {
+                setDate(i, title, text);
+            } else {
+                Toast.makeText(this, "只有地区和西历可以长按修改！", Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        });
         super.onCreate(savedInstanceState);
+    }
+
+    private int getNH() {
+        String s = null;
+        s = sharedPreferences.getString("AlmanacWesternCalendar", "");
+        if (!isBlank(s) && s.substring(0, 1).equals("-")) {
+            s = s.split("-")[1];
+        } else {
+            s = almanac.getWesternCalendar().split("-")[0];
+        }
+        return Integer.parseInt(s);
     }
 
     private TimeBean instantTimeBean() {
         TimeBean timeBean = null;
-        String province = null, area = null, dateFormer = null, timeFormer = null;
-        String date = sharedPreferences.getString("AlmanacDate", "");//默认值是空的
-        String time = sharedPreferences.getString("AlmanacTime", "");
-        String position = sharedPreferences.getString("AlmanacPosition", "");
-        if (null != almanac) {
-            province = almanac.getPosition().split(" ")[0];
-            area = almanac.getPosition().split(" ")[1];
-            dateFormer = almanac.getDateFormer();
-            timeFormer = almanac.getTimeFormer();
+        Date date = null;
+        String province = null, area = null, westernCalendar = null, position = null;
+        westernCalendar = sharedPreferences.getString("AlmanacWesternCalendar", "");//默认值是当前时间
+        position = sharedPreferences.getString("AlmanacPosition", "");
+        if (isAnyBlank(westernCalendar)) {
+            date = new Date();
         } else {
+            try {
+                date = TimeUtil.toDate(westernCalendar);
+            } catch (Exception e) {
+                showToast("日期时间参数异常！");
+                date = new Date();
+            }
+        }
+        if (isAnyBlank(position)) {
             province = "广东省";
             area = "徐闻县";
-            dateFormer = TimeUtil.getFormatDate("yyyy-MM-dd");
-            timeFormer = TimeUtil.getFormatDate("HH:mm:ss");
+        } else {
+            province = position.split(" ")[0];
+            area = position.split(" ")[1];
         }
-        String code = null;
         try {
-            if (!date.equals("") && !time.equals("") && !position.equals("")) {//111=7
-                code = "111";
-                timeBean = new TimeBean(position, date + " " + time);
-            } else if (date.equals("") && !time.equals("") && !position.equals("")) {//011=6
-                code = "011";
-                timeBean = new TimeBean(position, dateFormer + " " + time);
-            } else if (!date.equals("") && time.equals("") && !position.equals("")) {//101=5
-                code = "101";
-                timeBean = new TimeBean(position, date + " " + timeFormer);
-            } else if (date.equals("") && time.equals("") && !position.equals("")) {//001=4
-                code = "001";
-                timeBean = new TimeBean(position, Calendar.getInstance());
-            } else if (!date.equals("") && !time.equals("") && position.equals("")) {//110=3
-                code = "110";
-                timeBean = new TimeBean(province, area, date, time);
-            } else if (date.equals("") && !time.equals("") && position.equals("")) {//010=2
-                code = "010";
-                timeBean = new TimeBean(province, area, dateFormer, time);
-            } else if (!date.equals("") && time.equals("") && position.equals("")) {//100=1
-                code = "100";
-                timeBean = new TimeBean(province, area, date, timeFormer);
-            } else {//000=0
-                code = "000";
-                timeBean = new TimeBean(province, area, Calendar.getInstance());
-            }
+            timeBean = new TimeBean(province, area, date);
         } catch (Exception e) {
-            showToast("参数异常,code:" + code);
-            timeBean = new TimeBean(province, area, Calendar.getInstance());
+            showToast("地区参数异常！");
+            timeBean = new TimeBean("广东", "徐闻", new Date());
         }
         return timeBean;
     }
 
+    /***
+     * 适配器
+     * @param almanac1
+     */
     private void adapter(Almanac almanac1) {
         if (arrayList.size() > 0) {
             arrayList.clear();
@@ -129,21 +148,23 @@ public class MainActivity extends ListActivity {
 
     private Map<String, String> pakMap(Almanac almanac) {
         Map<String, String> map = new LinkedHashMap<String, String>();
-        map.put("日期", almanac.getDate());
-        map.put("时间", almanac.getTime());
-        map.put("地点", almanac.getPosition());
-        map.put("星期", almanac.getWeek());
-        map.put("年号", almanac.getYearNumber());
-        map.put("农历", almanac.getLunar());
-        map.put("时辰", almanac.getLunarTime());
+        //map.put("日期", almanac.getDate());
+        //map.put("时间", almanac.getTime());
+        map.put("地区", almanac.getPosition());
+        //map.put("星期", almanac.getWeek());
+        map.put("西历", almanac.getWesternCalendarCN());
+        map.put("农历", almanac.getLunar() + almanac.getLunarTime());
+        //map.put("时辰", almanac.getLunarTime());
         map.put("黄历", almanac.getHuangLi());
-        map.put("天干", almanac.getTianGan());
-        map.put("地支", almanac.getDiZhi());
-        map.put("八字", almanac.getBaZi());
-        map.put("回历", almanac.getIslamic());
-        map.put("儒略日", almanac.getJulianDay());
-        map.put("黄帝纪年", almanac.getChronology());
-        map.put("生肖", almanac.getZodiac());
+        map.put("史历", almanac.getYearNumber());
+        map.put("黄帝历", almanac.getChronology());//黄帝纪年
+        //map.put("天干", almanac.getTianGan());
+        //map.put("地支", almanac.getDiZhi());
+        //map.put("八字", almanac.getBaZi());
+        map.put("回历", almanac.getIslamic());//伊斯兰历
+        map.put("儒略历", almanac.getJulianDay());
+        map.put("节气", almanac.getNextSolarTerm());
+        //map.put("生肖", almanac.getZodiac());
         map.put("节假日", almanac.getHolidayVacations());
         map.put("经度", almanac.getLongitude());
         map.put("纬度", almanac.getLatitude());
@@ -160,12 +181,11 @@ public class MainActivity extends ListActivity {
         map.put("月中", almanac.getMidMoonTime());
         map.put("月落", almanac.getMoonDownTime());
         map.put("月相", almanac.getMoonPhase());
-        map.put("月天数", almanac.getLunarDays());
-        map.put("大月否", almanac.isLunarBigMonth());
-        map.put("闰月否", almanac.isLeapMonth());
-        map.put("闰年否", almanac.isLeapYear());
+        //map.put("月天数", almanac.getLunarDays());
+        map.put("大月", almanac.isLunarBigMonth() + " " + almanac.getLunarDays());
+        map.put("闰月", almanac.isLeapMonth());
+        map.put("闰年", almanac.isLeapYear());
         map.put("星座", almanac.getConstellation());
-        map.put("节气", almanac.getNextSolarTerm());
         //map.put("指定节气", almanac.getSolarTerm("秋分"));
         //map.put("24节气", almanac.getAllSolarTerm()[23]);
         return map;
@@ -176,19 +196,15 @@ public class MainActivity extends ListActivity {
         final Context context = this;
         EditText editText = new EditText(context);
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(context);
-        String date = sharedPreferences.getString("AlmanacDate", "");//默认值是空的
-        String time = sharedPreferences.getString("AlmanacTime", "");
+        String westernCalendar = sharedPreferences.getString("AlmanacWesternCalendar", "");//默认值是空的
         String position = sharedPreferences.getString("AlmanacPosition", "");
 
         if (0 == i) {
-            alertDialog.setTitle("修改日期（年-月-日）");
-            editText.setText(!date.equals("") ? date : almanac.getDateFormer());
-        } else if (1 == i) {
-            alertDialog.setTitle("修改时间（时:分:秒.毫秒）");
-            editText.setText(!time.equals("") ? time : almanac.getTimeFormer());
-        } else {
             alertDialog.setTitle("修改地点（省&&市/区/县）");
-            editText.setText(!position.equals("") ? position : text);
+            editText.setText(!isAnyBlank(position) ? position : text);
+        } else if (1 == i) {
+            alertDialog.setTitle("修改西历（年-月-日 时:分:秒.毫秒）");
+            editText.setText(!isAnyBlank(westernCalendar) ? westernCalendar : almanac.getWesternCalendar());
         }
         alertDialog.setCancelable(true);    //设置按钮是否可以按返回键取消,false则不可以取消
         //alertDialog.setCanceledOnTouchOutside(true); //设置弹出框失去焦点是否隐藏,即点击屏蔽其它地方是否隐藏
@@ -199,11 +215,9 @@ public class MainActivity extends ListActivity {
                 String inValue = editText.getText().toString();
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 if (0 == i) {
-                    editor.putString("AlmanacDate", inValue);
-                } else if (1 == i) {
-                    editor.putString("AlmanacTime", inValue);
-                } else if (2 == i) {
                     editor.putString("AlmanacPosition", inValue);
+                } else if (1 == i) {
+                    editor.putString("AlmanacWesternCalendar", inValue);
                 }
                 //完成提交
                 editor.commit();
@@ -216,17 +230,14 @@ public class MainActivity extends ListActivity {
 
             }
         });
-        alertDialog.setNeutralButton("清空", new DialogInterface.OnClickListener() {
+        alertDialog.setNeutralButton("重置", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                editText.setText("");
-                if (0 == i) {
-                    removeSetting("AlmanacDate");
-                } else if (1 == i) {
-                    removeSetting("AlmanacTime");
-                } else if (2 == i) {
-                    removeSetting("AlmanacPosition");
-                }
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString("AlmanacWesternCalendar", TimeUtil.getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
+                editor.putString("AlmanacPosition", "广东省 徐闻县");
+                editor.commit();
+                adapter(new AlmanacImpl(instantTimeBean()));
             }
         });
         alertDialog.show();
@@ -262,6 +273,38 @@ public class MainActivity extends ListActivity {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.commit();
+    }
+
+    /***
+     * 多个字符串判空，一真则真
+     * @param strings
+     * @return
+     */
+    public static boolean isAnyBlank(String... strings) {
+        for (String string : strings) {
+            if (isBlank(string)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /***
+     * org.apache.commons.lang3.StringUtils
+     * @param cs
+     * @return
+     */
+    private static boolean isBlank(final CharSequence cs) {
+        int strLen;
+        if (cs == null || (strLen = cs.length()) == 0) {
+            return true;
+        }
+        for (int i = 0; i < strLen; i++) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
