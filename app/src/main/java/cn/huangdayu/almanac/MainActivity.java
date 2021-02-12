@@ -1,9 +1,10 @@
-package com.almanac.main;
+package cn.huangdayu.almanac;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.*;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -13,15 +14,14 @@ import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
 import cn.huangdayu.almanac.dto.AlmanacDTO;
+import cn.huangdayu.almanac.dto.SolarTermDTO;
 import cn.huangdayu.almanac.dto.TimeZoneDTO;
 import cn.huangdayu.almanac.utils.AlmanacUtils;
 import cn.huangdayu.almanac.utils.ConstantsUtils;
 import cn.huangdayu.almanac.utils.DateTimeUtils;
+import cn.huangdayu.almanac.R;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MainActivity extends ListActivity {
     private ListView mListView = null;
@@ -39,77 +39,69 @@ public class MainActivity extends ListActivity {
         sharedPreferences = getSharedPreferences("AlmanacSetting", Context.MODE_PRIVATE);
         //获取剪贴板管理器：
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        adapter(AlmanacUtils.dayCalendar(instantTimeBean()));
+        refreshAdapter(AlmanacUtils.dayCalendar(getTimeZoneDTO(true)));
         //点击事件
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 HashMap<String, String> itemMap = (HashMap<String, String>) mListView.getItemAtPosition(i);
-                String title = itemMap.get("title").replace(":", "");
+                String title = itemMap.get("title").replaceAll(":", "").replaceAll(" ", "");
                 String text = itemMap.get("text");
-                internetDialog(title, text + "\n" + ConstantsUtils.getDesc(text));
+                String desc = ConstantsUtils.getDesc(title);
+                if ("节气".equals(title)) {
+                    desc = ConstantsUtils.getDesc(text.split(" ")[0]);
+                }
+                internetDialog(title, text + (isBlank(desc) ? "" : "\n" + desc));
             }
         });
         // 长按事件
         mListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
             HashMap<String, String> itemMap = (HashMap<String, String>) mListView.getItemAtPosition(i);
-            String title = itemMap.get("title").replace(":", "");
+            String title = itemMap.get("title").replaceAll(":", "").replaceAll(" ", "");
             String text = itemMap.get("text");
             // 将ClipData内容放到系统剪贴板里。
             clipboardManager.setPrimaryClip(ClipData.newPlainText("Label", text));
-            if (0 == i || 1 == i) {
-                setDate(i, title, text);
-            } else {
-                Toast.makeText(this, "只有地区和西历可以长按修改！", Toast.LENGTH_SHORT).show();
-            }
+            setting(title, text);
+            Toast.makeText(this, title + " 已复制到粘贴板！", Toast.LENGTH_SHORT).show();
             return true;
         });
         super.onCreate(savedInstanceState);
     }
 
-    private TimeZoneDTO instantTimeBean() {
-        TimeZoneDTO timeZoneDTO = null;
-        Date date = null;
-        String province = null, area = null, westernCalendar = null, position = null;
-        westernCalendar = sharedPreferences.getString("AlmanacWesternCalendar", "");//默认值是当前时间
-        position = sharedPreferences.getString("AlmanacPosition", "");
-        if (isAnyBlank(westernCalendar)) {
-            date = new Date();
-        } else {
+    private TimeZoneDTO getTimeZoneDTO(boolean now) {
+        Date date = new Date();
+        String province = "广东省", area = "徐闻县";
+        String westernCalendar = sharedPreferences.getString("AlmanacWesternCalendar", "");//默认值是当前时间
+        String position = sharedPreferences.getString("AlmanacPosition", "");
+        if (!isBlank(westernCalendar) && !now) {
             try {
                 date = DateTimeUtils.toDate(westernCalendar);
             } catch (Exception e) {
                 showToast("日期时间参数异常！");
-                date = new Date();
             }
         }
-        if (isAnyBlank(position)) {
-            province = "广东省";
-            area = "徐闻县";
-        } else {
-            province = position.split(" ")[0];
-            area = position.split(" ")[1];
+        if (!isBlank(position)) {
+            try {
+                province = position.split(" ")[0];
+                area = position.split(" ")[1];
+            } catch (Exception e) {
+                showToast("地区参数异常！");
+            }
         }
-        try {
-            timeZoneDTO = new TimeZoneDTO(province, date);
-        } catch (Exception e) {
-            showToast("地区参数异常！");
-            timeZoneDTO = new TimeZoneDTO("广东", "徐闻", new Date());
-        }
-        return timeZoneDTO;
+        return new TimeZoneDTO(province, area, date);
     }
 
     /***
      * 适配器
      * @param almanacDTO
      */
-    private void adapter(AlmanacDTO almanacDTO) {
+    private void refreshAdapter(AlmanacDTO almanacDTO) {
         arrayList.clear();
         this.almanacDTO = almanacDTO;
-        almanacDTO.toMap().forEach((K, V) -> {
-            Map<String, Object> item = new HashMap<String, Object>();
-            item.put("title", " " + K + " : ");
-            item.put("text", V);
+        almanacDTO.toMap().forEach((k, v) -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("title", " " + k + " : ");
+            item.put("text", v);
             arrayList.add(item);
         });
         SimpleAdapter adapter = new SimpleAdapter(this, arrayList,
@@ -119,17 +111,37 @@ public class MainActivity extends ListActivity {
     }
 
 
-    public void setDate(int i, String title, String text) {
+    /**
+     * 设置框弹窗
+     *
+     * @param title
+     * @param text
+     */
+    public boolean setting(String title, String text) {
+        List<String> keys = Arrays.asList("地点", "西历");
+        if (!keys.contains(title)) {
+            if ("节气".equals(title)) {
+                StringBuilder solarTermText = new StringBuilder();
+                for (SolarTermDTO solarTermDTO : almanacDTO.getSolarTermDTO().getNext()) {
+                    solarTermText.append(solarTermDTO.getDetails()).append("\n");
+                }
+                internetDialog("往后节气", solarTermText.toString());
+            } else {
+                String desc = ConstantsUtils.getDesc(title);
+                internetDialog(title, text + (isBlank(desc) ? "" : "\n" + desc));
+            }
+            return false;
+        }
         final Context context = this;
         EditText editText = new EditText(context);
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(context);
         String westernCalendar = sharedPreferences.getString("AlmanacWesternCalendar", "");//默认值是空的
         String position = sharedPreferences.getString("AlmanacPosition", "");
 
-        if (0 == i) {
+        if ("地点".equals(title)) {
             alertDialog.setTitle("修改地点（省&&市/区/县）");
             editText.setText(!isAnyBlank(position) ? position : text);
-        } else if (1 == i) {
+        } else if ("西历".equals(title)) {
             alertDialog.setTitle("修改西历（年-月-日 时:分:秒.毫秒）");
             editText.setText(!isAnyBlank(westernCalendar) ? westernCalendar : DateTimeUtils.getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
         }
@@ -141,14 +153,14 @@ public class MainActivity extends ListActivity {
             public void onClick(DialogInterface dialog, int which) {
                 String inValue = editText.getText().toString();
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                if (0 == i) {
+                if ("地点".equals(title)) {
                     editor.putString("AlmanacPosition", inValue);
-                } else if (1 == i) {
+                } else if ("西历".equals(title)) {
                     editor.putString("AlmanacWesternCalendar", inValue);
                 }
                 //完成提交
                 editor.commit();
-                adapter(AlmanacUtils.dayCalendar(instantTimeBean()));
+                refreshAdapter(AlmanacUtils.dayCalendar(getTimeZoneDTO(false)));
             }
         });
         alertDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -164,10 +176,11 @@ public class MainActivity extends ListActivity {
                 editor.putString("AlmanacWesternCalendar", DateTimeUtils.getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
                 editor.putString("AlmanacPosition", "广东省 徐闻县");
                 editor.commit();
-                adapter(AlmanacUtils.dayCalendar(instantTimeBean()));
+                refreshAdapter(AlmanacUtils.dayCalendar(getTimeZoneDTO(false)));
             }
         });
         alertDialog.show();
+        return true;
     }
 
     private void showToast(String str) {
@@ -176,16 +189,16 @@ public class MainActivity extends ListActivity {
 
     public void internetDialog(String title, String text) {
         final Context context = this;
-        AlertDialog.Builder rconectDialog = new AlertDialog.Builder(context);
-        rconectDialog.setTitle(title);
-        rconectDialog.setMessage(text);
-        rconectDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(title);
+        builder.setMessage(text);
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
             }
         });
-        rconectDialog.show();
+        builder.show();
     }
 
     //清除指定数据
