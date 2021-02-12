@@ -7,11 +7,7 @@ import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
-import android.widget.AdapterView;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
-import android.widget.Toast;
+import android.widget.*;
 
 import cn.huangdayu.almanac.dto.AlmanacDTO;
 import cn.huangdayu.almanac.dto.SolarTermDTO;
@@ -26,9 +22,13 @@ import java.util.*;
 public class MainActivity extends ListActivity {
     private ListView mListView = null;
     private ArrayList<Map<String, Object>> arrayList = new ArrayList<>();
-    private AlmanacDTO almanacDTO = null;
+    private AlmanacDTO[] almanacDTOS = null;
     private SharedPreferences sharedPreferences = null;
     private ClipboardManager clipboardManager = null;
+    private boolean top = false;
+    private int dayIndex = 0;
+    private TimeZoneDTO timeZoneDTO = null;
+    private AlmanacDTO almanacDTO = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +39,7 @@ public class MainActivity extends ListActivity {
         sharedPreferences = getSharedPreferences("AlmanacSetting", Context.MODE_PRIVATE);
         //获取剪贴板管理器：
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        refreshAdapter(AlmanacUtils.dayCalendar(getTimeZoneDTO(true)));
+        update(true);
         //点击事件
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -65,7 +65,76 @@ public class MainActivity extends ListActivity {
             Toast.makeText(this, title + " 已复制到粘贴板！", Toast.LENGTH_SHORT).show();
             return true;
         });
+        mListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            int before = 0, after = 0;
+
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                switch (scrollState) {
+                    case AbsListView.OnScrollListener.SCROLL_STATE_IDLE: // 刷新完毕
+                        break;
+                    case AbsListView.OnScrollListener.SCROLL_STATE_FLING: // 挑划产生刷新
+                        break;
+                    case AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL: // 拖动产生刷新
+                        if (top) {
+                            before++;
+                            after = 0;
+                            if (before >= 2) {
+                                before = 0;
+                                showToast("前一天！");
+                                dayIndex--;
+                                almanacDTO = almanacDTOS[dayIndex];
+                                if (almanacDTO != null) {
+                                    refreshAdapter();
+                                }
+                            }
+                        } else {
+                            after++;
+                            before = 0;
+                            if (after >= 2) {
+                                after = 0;
+                                showToast("后一天！");
+                                dayIndex++;
+                                almanacDTO = almanacDTOS[dayIndex];
+                                if (almanacDTO != null) {
+                                    refreshAdapter();
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                if (firstVisibleItem == 0) {
+                    View firstView = mListView.getChildAt(0);
+                    if (firstView != null && firstView.getTop() == 0) {
+                        // 已经滚动到顶部了
+                        top = true;
+                    }
+                }
+
+                if (firstVisibleItem + visibleItemCount == totalItemCount) {
+                    View lastView = mListView.getChildAt(mListView.getChildCount() - 1);
+                    if (lastView != null && lastView.getBottom() == mListView.getHeight()) {
+                        // 已经滚动到最底部了
+                        top = false;
+                    }
+                }
+            }
+        });
         super.onCreate(savedInstanceState);
+    }
+
+    private void update(boolean now) {
+        timeZoneDTO = getTimeZoneDTO(now);
+        almanacDTOS = AlmanacUtils.monthCalendar(timeZoneDTO);
+        dayIndex = timeZoneDTO.getCalendar().get(Calendar.DATE) - 1;
+        almanacDTO = almanacDTOS[dayIndex];
+        refreshAdapter();
     }
 
     private TimeZoneDTO getTimeZoneDTO(boolean now) {
@@ -92,12 +161,10 @@ public class MainActivity extends ListActivity {
     }
 
     /***
-     * 适配器
-     * @param almanacDTO
+     * 刷新适配器
      */
-    private void refreshAdapter(AlmanacDTO almanacDTO) {
+    private void refreshAdapter() {
         arrayList.clear();
-        this.almanacDTO = almanacDTO;
         almanacDTO.toMap().forEach((k, v) -> {
             Map<String, Object> item = new HashMap<>();
             item.put("title", " " + k + " : ");
@@ -160,7 +227,7 @@ public class MainActivity extends ListActivity {
                 }
                 //完成提交
                 editor.commit();
-                refreshAdapter(AlmanacUtils.dayCalendar(getTimeZoneDTO(false)));
+                update(false);
             }
         });
         alertDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -176,7 +243,7 @@ public class MainActivity extends ListActivity {
                 editor.putString("AlmanacWesternCalendar", DateTimeUtils.getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
                 editor.putString("AlmanacPosition", "广东省 徐闻县");
                 editor.commit();
-                refreshAdapter(AlmanacUtils.dayCalendar(getTimeZoneDTO(false)));
+                update(false);
             }
         });
         alertDialog.show();
