@@ -263,7 +263,7 @@ public class MainActivity extends ListActivity {
     }
 
     private void showToast(String str) {
-        Toast.makeText(this, str, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
     }
 
     public void internetDialog(String title, String text) {
