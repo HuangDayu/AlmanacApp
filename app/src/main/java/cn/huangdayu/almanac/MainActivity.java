@@ -10,6 +10,7 @@ import android.view.Window;
 import android.widget.*;
 
 import cn.huangdayu.almanac.dto.AlmanacDTO;
+import cn.huangdayu.almanac.dto.MoonPhaseDTO;
 import cn.huangdayu.almanac.dto.SolarTermDTO;
 import cn.huangdayu.almanac.dto.TimeZoneDTO;
 import cn.huangdayu.almanac.utils.AlmanacUtils;
@@ -21,13 +22,12 @@ import java.util.*;
 
 public class MainActivity extends ListActivity {
     private ListView mListView = null;
-    private ArrayList<Map<String, Object>> arrayList = new ArrayList<>();
+    private final ArrayList<Map<String, Object>> arrayList = new ArrayList<>();
     private AlmanacDTO[] almanacDTOS = null;
     private SharedPreferences sharedPreferences = null;
     private ClipboardManager clipboardManager = null;
     private boolean top = false;
     private int dayIndex = 0;
-    private TimeZoneDTO timeZoneDTO = null;
     private AlmanacDTO almanacDTO = null;
 
     @Override
@@ -114,6 +114,9 @@ public class MainActivity extends ListActivity {
                     if (firstView != null && firstView.getTop() == 0) {
                         // 已经滚动到顶部了
                         top = true;
+                    } else {
+                        before = 0;
+                        after = 0;
                     }
                 }
 
@@ -122,6 +125,9 @@ public class MainActivity extends ListActivity {
                     if (lastView != null && lastView.getBottom() == mListView.getHeight()) {
                         // 已经滚动到最底部了
                         top = false;
+                    } else {
+                        before = 0;
+                        after = 0;
                     }
                 }
             }
@@ -130,7 +136,7 @@ public class MainActivity extends ListActivity {
     }
 
     private void update(boolean now) {
-        timeZoneDTO = getTimeZoneDTO(now);
+        TimeZoneDTO timeZoneDTO = getTimeZoneDTO(now);
         almanacDTOS = AlmanacUtils.monthCalendar(timeZoneDTO);
         dayIndex = timeZoneDTO.getCalendar().get(Calendar.DATE) - 1;
         almanacDTO = almanacDTOS[dayIndex];
@@ -193,6 +199,12 @@ public class MainActivity extends ListActivity {
                     solarTermText.append(solarTermDTO.getDetails()).append("\n");
                 }
                 internetDialog("往后节气", solarTermText.toString());
+            } else if ("月相".equals(title)) {
+                StringBuilder moonPhaseText = new StringBuilder();
+                for (MoonPhaseDTO moonPhaseDTO : almanacDTO.getMoonPhaseDTO().getNext()) {
+                    moonPhaseText.append(moonPhaseDTO.getDetails()).append("\n");
+                }
+                internetDialog("往后月相", moonPhaseText.toString());
             } else {
                 String desc = ConstantsUtils.getDesc(title);
                 internetDialog(title, text + (isBlank(desc) ? "" : "\n" + desc));
