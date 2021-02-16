@@ -1,14 +1,13 @@
 package cn.huangdayu.almanac;
 
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.content.*;
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.*;
 
+import androidx.appcompat.app.AppCompatActivity;
 import cn.huangdayu.almanac.dto.AlmanacDTO;
 import cn.huangdayu.almanac.dto.MoonPhaseDTO;
 import cn.huangdayu.almanac.dto.SolarTermDTO;
@@ -16,15 +15,17 @@ import cn.huangdayu.almanac.dto.TimeZoneDTO;
 import cn.huangdayu.almanac.utils.AlmanacUtils;
 import cn.huangdayu.almanac.utils.ConstantsUtils;
 import cn.huangdayu.almanac.utils.DateTimeUtils;
-import cn.huangdayu.almanac.R;
 
 import java.util.*;
 
-public class MainActivity extends ListActivity {
-    private ListView mListView = null;
-    private final ArrayList<Map<String, Object>> arrayList = new ArrayList<>();
+public class MainActivity extends AppCompatActivity {
+    private CustomizeListView listView;
+    private final List<Map<String, Object>> arrayList = new ArrayList<>();
     private AlmanacDTO[] almanacDTOS = null;
     private SharedPreferences sharedPreferences = null;
+    /**
+     * 获取剪贴板管理器
+     */
     private ClipboardManager clipboardManager = null;
     private boolean top = false;
     private int dayIndex = 0;
@@ -33,18 +34,21 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        mListView = super.getListView();
-        //super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
+        super.onCreate(savedInstanceState);
+        listView = findViewById(R.id.almanacListView);
         sharedPreferences = getSharedPreferences("AlmanacSetting", Context.MODE_PRIVATE);
-        //获取剪贴板管理器：
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         update(true);
+        addListViewListener();
+    }
+
+    private void addListViewListener() {
         //点击事件
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                HashMap<String, String> itemMap = (HashMap<String, String>) mListView.getItemAtPosition(i);
+                HashMap<String, String> itemMap = (HashMap<String, String>) listView.getItemAtPosition(i);
                 String title = itemMap.get("title").replaceAll(":", "").replaceAll(" ", "");
                 String text = itemMap.get("text");
                 String desc = ConstantsUtils.getDesc(title);
@@ -55,8 +59,8 @@ public class MainActivity extends ListActivity {
             }
         });
         // 长按事件
-        mListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
-            HashMap<String, String> itemMap = (HashMap<String, String>) mListView.getItemAtPosition(i);
+        listView.setOnItemLongClickListener((adapterView, view, i, l) -> {
+            HashMap<String, String> itemMap = (HashMap<String, String>) listView.getItemAtPosition(i);
             String title = itemMap.get("title").replaceAll(":", "").replaceAll(" ", "");
             String text = itemMap.get("text");
             // 将ClipData内容放到系统剪贴板里。
@@ -65,7 +69,8 @@ public class MainActivity extends ListActivity {
             Toast.makeText(this, title + " 已复制到粘贴板！", Toast.LENGTH_SHORT).show();
             return true;
         });
-        mListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+        // 活动事件
+        listView.setOnScrollListener(new AbsListView.OnScrollListener() {
             int before = 0, after = 0;
 
             @Override
@@ -110,7 +115,7 @@ public class MainActivity extends ListActivity {
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
                 if (firstVisibleItem == 0) {
-                    View firstView = mListView.getChildAt(0);
+                    View firstView = listView.getChildAt(0);
                     if (firstView != null && firstView.getTop() == 0) {
                         // 已经滚动到顶部了
                         top = true;
@@ -121,8 +126,8 @@ public class MainActivity extends ListActivity {
                 }
 
                 if (firstVisibleItem + visibleItemCount == totalItemCount) {
-                    View lastView = mListView.getChildAt(mListView.getChildCount() - 1);
-                    if (lastView != null && lastView.getBottom() == mListView.getHeight()) {
+                    View lastView = listView.getChildAt(listView.getChildCount() - 1);
+                    if (lastView != null && lastView.getBottom() == listView.getHeight()) {
                         // 已经滚动到最底部了
                         top = false;
                     } else {
@@ -132,7 +137,6 @@ public class MainActivity extends ListActivity {
                 }
             }
         });
-        super.onCreate(savedInstanceState);
     }
 
     private void update(boolean now) {
@@ -177,10 +181,13 @@ public class MainActivity extends ListActivity {
             item.put("text", v);
             arrayList.add(item);
         });
+//        ArrayAdapter<Map<String, Object>> adapter = new ArrayAdapter<>(this,
+//                R.layout.activity_almanac_item,
+//                arrayList);
         SimpleAdapter adapter = new SimpleAdapter(this, arrayList,
-                R.layout.activity_main, new String[]{"title", "text"}, new int[]{
-                R.id.title, R.id.text});
-        super.setListAdapter(adapter);
+                R.layout.activity_almanac_item, new String[]{"title", "text"}, new int[]{
+                R.id.almanac_item_title, R.id.almanac_item_text});
+        listView.setAdapter(adapter);
     }
 
 
