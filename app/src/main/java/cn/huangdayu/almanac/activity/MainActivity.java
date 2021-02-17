@@ -1,13 +1,14 @@
-package cn.huangdayu.almanac;
+package cn.huangdayu.almanac.activity;
 
 import android.app.AlertDialog;
 import android.content.*;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.*;
 
-import androidx.appcompat.app.AppCompatActivity;
+import cn.huangdayu.almanac.R;
 import cn.huangdayu.almanac.dto.AlmanacDTO;
 import cn.huangdayu.almanac.dto.MoonPhaseDTO;
 import cn.huangdayu.almanac.dto.SolarTermDTO;
@@ -15,34 +16,97 @@ import cn.huangdayu.almanac.dto.TimeZoneDTO;
 import cn.huangdayu.almanac.utils.AlmanacUtils;
 import cn.huangdayu.almanac.utils.ConstantsUtils;
 import cn.huangdayu.almanac.utils.DateTimeUtils;
+import cn.huangdayu.almanac.view.CustomizeListView;
+import com.necer.calendar.BaseCalendar;
+import com.necer.calendar.Miui10Calendar;
+import com.necer.entity.CalendarDate;
+import com.necer.entity.Lunar;
+import com.necer.enumeration.CheckModel;
+import com.necer.enumeration.DateChangeBehavior;
+import com.necer.listener.OnCalendarChangedListener;
+import com.necer.listener.OnCalendarMultipleChangedListener;
+import com.necer.painter.InnerPainter;
+import com.necer.utils.CalendarUtil;
+import org.joda.time.LocalDate;
 
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class MainActivity extends AppCompatActivity {
-    private CustomizeListView listView;
+public class MainActivity extends BaseActivity {
+
     private final List<Map<String, Object>> arrayList = new ArrayList<>();
-    private AlmanacDTO[] almanacDTOS = null;
-    private SharedPreferences sharedPreferences = null;
+
     /**
      * 获取剪贴板管理器
      */
-    private ClipboardManager clipboardManager = null;
-    private boolean top = false;
-    private int dayIndex = 0;
-    private AlmanacDTO almanacDTO = null;
+    private ClipboardManager clipboardManager;
+    private Miui10Calendar miui10Calendar;
+    private CustomizeListView listView;
+    private SharedPreferences sharedPreferences;
+
+    private TimeZoneDTO timeZoneDTO;
+    private AlmanacDTO almanacDTO;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        //requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         super.onCreate(savedInstanceState);
         listView = findViewById(R.id.almanacListView);
+        miui10Calendar = findViewById(R.id.miui10Calendar);
+        miui10Calendar.setCheckMode(CheckModel.SINGLE_DEFAULT_CHECKED);
         sharedPreferences = getSharedPreferences("AlmanacSetting", Context.MODE_PRIVATE);
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        update(true);
         addListViewListener();
+        addCalendarListener();
+
+        // 设置标记
+        List<String> pointList = Arrays.asList("2018-10-01", "2018-11-19", "2018-11-20", "2018-05-23", "2019-01-01", "2018-12-23", "2021-02-16");
+        InnerPainter innerPainter = (InnerPainter) miui10Calendar.getCalendarPainter();
+        innerPainter.setPointList(pointList);
+
+
     }
 
+    private void addCalendarListener() {
+        /**
+         * 单选
+         */
+        miui10Calendar.setOnCalendarChangedListener(new OnCalendarChangedListener() {
+            @Override
+            public void onCalendarChange(BaseCalendar baseCalendar, int year, int month, LocalDate localDate, DateChangeBehavior dateChangeBehavior) {
+                if (timeZoneDTO == null) {
+                    timeZoneDTO = getTimeZoneDTO(true);
+                } else {
+                    Log.d(TAG, "选中日期: " + localDate);
+                    timeZoneDTO.setYear(localDate.getYear());
+                    timeZoneDTO.setMonth(localDate.getMonthOfYear());
+                    timeZoneDTO.setDay(localDate.getDayOfMonth());
+                    timeZoneDTO = new TimeZoneDTO(timeZoneDTO);
+                }
+                almanacDTO = AlmanacUtils.dayCalendar(timeZoneDTO);
+                refreshAdapter();
+//                CalendarDate calendarDate = CalendarUtil.getCalendarDate(localDate);
+//                Lunar lunar = calendarDate.lunar;
+            }
+        });
+        /**
+         * 多选
+         */
+        miui10Calendar.setOnCalendarMultipleChangedListener(new OnCalendarMultipleChangedListener() {
+            @Override
+            public void onCalendarChange(BaseCalendar baseCalendar, int year, int month, List<LocalDate> currPagerCheckedList, List<LocalDate> totalCheckedList, DateChangeBehavior dateChangeBehavior) {
+                Log.d(TAG, "选中日期：" + currPagerCheckedList);
+                Log.d(TAG, "全部选中：：" + totalCheckedList);
+            }
+        });
+    }
+
+    /**
+     * 添加listview监听
+     */
     private void addListViewListener() {
         //点击事件
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -71,8 +135,6 @@ public class MainActivity extends AppCompatActivity {
         });
         // 活动事件
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
-            int before = 0, after = 0;
-
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
                 switch (scrollState) {
@@ -81,31 +143,6 @@ public class MainActivity extends AppCompatActivity {
                     case AbsListView.OnScrollListener.SCROLL_STATE_FLING: // 挑划产生刷新
                         break;
                     case AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL: // 拖动产生刷新
-                        if (top) {
-                            before++;
-                            after = 0;
-                            if (before >= 2) {
-                                before = 0;
-                                showToast("前一天！");
-                                dayIndex--;
-                                almanacDTO = almanacDTOS[dayIndex];
-                                if (almanacDTO != null) {
-                                    refreshAdapter();
-                                }
-                            }
-                        } else {
-                            after++;
-                            before = 0;
-                            if (after >= 2) {
-                                after = 0;
-                                showToast("后一天！");
-                                dayIndex++;
-                                almanacDTO = almanacDTOS[dayIndex];
-                                if (almanacDTO != null) {
-                                    refreshAdapter();
-                                }
-                            }
-                        }
                         break;
                     default:
                         break;
@@ -118,10 +155,7 @@ public class MainActivity extends AppCompatActivity {
                     View firstView = listView.getChildAt(0);
                     if (firstView != null && firstView.getTop() == 0) {
                         // 已经滚动到顶部了
-                        top = true;
                     } else {
-                        before = 0;
-                        after = 0;
                     }
                 }
 
@@ -129,45 +163,37 @@ public class MainActivity extends AppCompatActivity {
                     View lastView = listView.getChildAt(listView.getChildCount() - 1);
                     if (lastView != null && lastView.getBottom() == listView.getHeight()) {
                         // 已经滚动到最底部了
-                        top = false;
                     } else {
-                        before = 0;
-                        after = 0;
                     }
                 }
             }
         });
     }
 
-    private void update(boolean now) {
-        TimeZoneDTO timeZoneDTO = getTimeZoneDTO(now);
-        almanacDTOS = AlmanacUtils.monthCalendar(timeZoneDTO);
-        dayIndex = timeZoneDTO.getCalendar().get(Calendar.DATE) - 1;
-        almanacDTO = almanacDTOS[dayIndex];
+    private void initAlmanac(boolean now) {
+        timeZoneDTO = getTimeZoneDTO(now);
+        almanacDTO = AlmanacUtils.dayCalendar(timeZoneDTO);
         refreshAdapter();
     }
 
     private TimeZoneDTO getTimeZoneDTO(boolean now) {
-        Date date = new Date();
-        String province = "广东省", area = "徐闻县";
-        String westernCalendar = sharedPreferences.getString("AlmanacWesternCalendar", "");//默认值是当前时间
-        String position = sharedPreferences.getString("AlmanacPosition", "");
-        if (!isBlank(westernCalendar) && !now) {
-            try {
+        try {
+            Date date = new Date();
+            String province = "广东省", area = "徐闻县";
+            String westernCalendar = sharedPreferences.getString("AlmanacWesternCalendar", "");//默认值是当前时间
+            String position = sharedPreferences.getString("AlmanacPosition", "");
+            if (!isBlank(westernCalendar) && !now) {
                 date = DateTimeUtils.toDate(westernCalendar);
-            } catch (Exception e) {
-                showToast("日期时间参数异常！");
             }
-        }
-        if (!isBlank(position)) {
-            try {
+            if (!isBlank(position)) {
                 province = position.split(" ")[0];
                 area = position.split(" ")[1];
-            } catch (Exception e) {
-                showToast("地区参数异常！");
             }
+            return new TimeZoneDTO(province, area, date);
+        } catch (Exception e) {
+            showToast("日期时间参数异常！");
         }
-        return new TimeZoneDTO(province, area, date);
+        return new TimeZoneDTO("广东省", "徐闻县", new Date());
     }
 
     /***
@@ -246,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //完成提交
                 editor.commit();
-                update(false);
+                initAlmanac(false);
             }
         });
         alertDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -262,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
                 editor.putString("AlmanacWesternCalendar", DateTimeUtils.getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
                 editor.putString("AlmanacPosition", "广东省 徐闻县");
                 editor.commit();
-                update(false);
+                initAlmanac(false);
             }
         });
         alertDialog.show();

@@ -1,4 +1,4 @@
-package cn.huangdayu.almanac;
+package cn.huangdayu.almanac.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -6,6 +6,7 @@ import android.widget.ListView;
 
 /**
  * @author huangdayu create at 2021/2/16 20:03
+ * @reference <a>https://www.jianshu.com/p/7a56cd29e090</a>
  */
 public class CustomizeListView extends ListView {
 

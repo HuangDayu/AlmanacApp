@@ -7,14 +7,6 @@
               android:orientation="vertical">
 
 
-    <TextView
-            android:id="@+id/tv_result"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="15dp"/>
-
-
     <com.necer.view.WeekBar
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,47 +26,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scrollbars="vertical"
-                android:background="@android:color/darker_gray">
+                android:background="@android:color/white">
 
             <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
-                <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginLeft="15dp"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginRight="15dp"
-                        android:layout_marginBottom="15dp"
-                        android:orientation="vertical"
-                        android:padding="15dp">
-
-                    <TextView
-                            android:id="@+id/tv_data"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text=""
-                            android:textColor="#333333"
-                            android:textSize="13sp"/>
-
-                    <TextView
-                            android:id="@+id/tv_desc"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text=""
-                            android:textColor="#666666"
-                            android:textSize="12sp"/>
-
-                </LinearLayout>
-
-                <cn.huangdayu.almanac.CustomizeListView
+                <cn.huangdayu.almanac.view.CustomizeListView
                         android:id="@+id/almanacListView"
+                        android:layout_marginTop="1dp"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent">
-
-                </cn.huangdayu.almanac.CustomizeListView>
+                        android:layout_height="wrap_content">
+                </cn.huangdayu.almanac.view.CustomizeListView>
 
             </RelativeLayout>
 
