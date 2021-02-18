@@ -5,7 +5,6 @@ import android.content.*;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.widget.*;
 
 import cn.huangdayu.almanac.R;
@@ -13,25 +12,25 @@ import cn.huangdayu.almanac.dto.AlmanacDTO;
 import cn.huangdayu.almanac.dto.MoonPhaseDTO;
 import cn.huangdayu.almanac.dto.SolarTermDTO;
 import cn.huangdayu.almanac.dto.TimeZoneDTO;
+import cn.huangdayu.almanac.impl.SolartermsBackgroundImpl;
 import cn.huangdayu.almanac.utils.AlmanacUtils;
 import cn.huangdayu.almanac.utils.ConstantsUtils;
 import cn.huangdayu.almanac.utils.DateTimeUtils;
 import cn.huangdayu.almanac.view.CustomizeListView;
 import com.necer.calendar.BaseCalendar;
 import com.necer.calendar.Miui10Calendar;
-import com.necer.entity.CalendarDate;
-import com.necer.entity.Lunar;
+import com.necer.enumeration.CalendarState;
 import com.necer.enumeration.CheckModel;
 import com.necer.enumeration.DateChangeBehavior;
 import com.necer.listener.OnCalendarChangedListener;
 import com.necer.listener.OnCalendarMultipleChangedListener;
+import com.necer.listener.OnClickDisableDateListener;
+import com.necer.painter.CalendarBackground;
 import com.necer.painter.InnerPainter;
-import com.necer.utils.CalendarUtil;
+import com.necer.painter.NumBackground;
 import org.joda.time.LocalDate;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends BaseActivity {
 
@@ -42,9 +41,12 @@ public class MainActivity extends BaseActivity {
      */
     private ClipboardManager clipboardManager;
     private Miui10Calendar miui10Calendar;
+    private InnerPainter innerPainter;
     private CustomizeListView listView;
     private SharedPreferences sharedPreferences;
-
+    private Context context;
+    private CalendarBackground numberBackground;
+    private SolartermsBackgroundImpl solartermsBackground;
     private TimeZoneDTO timeZoneDTO;
     private AlmanacDTO almanacDTO;
 
@@ -54,23 +56,42 @@ public class MainActivity extends BaseActivity {
         //requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         super.onCreate(savedInstanceState);
-        listView = findViewById(R.id.almanacListView);
-        miui10Calendar = findViewById(R.id.miui10Calendar);
-        miui10Calendar.setCheckMode(CheckModel.SINGLE_DEFAULT_CHECKED);
+        context = getApplicationContext();
         sharedPreferences = getSharedPreferences("AlmanacSetting", Context.MODE_PRIVATE);
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        addListViewListener();
-        addCalendarListener();
+        initListView();
+        initCalendar();
+
+        Map<String, String> strMap = new HashMap<>();
+        strMap.put("1995-08-12", "生日快乐");
+        strMap.put("2021-02-18", "摘辣椒");
+        strMap.put("2021-08-24", "生日快乐");
+
+        // 设置详细显示
+        innerPainter.setStretchStrMap(strMap);
 
         // 设置标记
-        List<String> pointList = Arrays.asList("2018-10-01", "2018-11-19", "2018-11-20", "2018-05-23", "2019-01-01", "2018-12-23", "2021-02-16");
-        InnerPainter innerPainter = (InnerPainter) miui10Calendar.getCalendarPainter();
-        innerPainter.setPointList(pointList);
-
+        innerPainter.setPointList(new ArrayList<>(strMap.keySet()));
 
     }
 
-    private void addCalendarListener() {
+    private void initCalendar() {
+        miui10Calendar = findViewById(R.id.miui10Calendar);
+        miui10Calendar.setCheckMode(CheckModel.SINGLE_DEFAULT_CHECKED);
+        miui10Calendar.setCalendarState(CalendarState.MONTH);
+        miui10Calendar.setStretchCalendarEnable(true);
+        innerPainter = (InnerPainter) miui10Calendar.getCalendarPainter();
+        numberBackground = new NumBackground(miui10Calendar.getAttrs().numberBackgroundTextSize, miui10Calendar.getAttrs().numberBackgroundTextColor, miui10Calendar.getAttrs().numberBackgroundAlphaColor);
+        solartermsBackground = new SolartermsBackgroundImpl(context, miui10Calendar);
+        miui10Calendar.setOnClickDisableDateListener(new OnClickDisableDateListener() {
+            @Override
+            public void onClickDisableDate(LocalDate localDate) {
+                Log.e(TAG, "不可用日期：" + localDate);
+            }
+        });
+
+        final boolean[] cleanBackground = {true};
+
         /**
          * 单选
          */
@@ -88,6 +109,12 @@ public class MainActivity extends BaseActivity {
                 }
                 almanacDTO = AlmanacUtils.dayCalendar(timeZoneDTO);
                 refreshAdapter();
+                if (almanacDTO != null && almanacDTO.getSolarTermDTO() != null && almanacDTO.getSolarTermDTO().getAfterDay() != null && almanacDTO.getSolarTermDTO().getAfterDay() == 0) {
+                    solartermsBackground.setIndex(almanacDTO.getSolarTermDTO().getIndex());
+                    miui10Calendar.setMonthCalendarBackground(solartermsBackground);
+                } else {
+                    miui10Calendar.setMonthCalendarBackground(numberBackground);
+                }
 //                CalendarDate calendarDate = CalendarUtil.getCalendarDate(localDate);
 //                Lunar lunar = calendarDate.lunar;
             }
@@ -107,7 +134,9 @@ public class MainActivity extends BaseActivity {
     /**
      * 添加listview监听
      */
-    private void addListViewListener() {
+    private void initListView() {
+        listView = findViewById(R.id.almanacListView);
+
         //点击事件
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -127,10 +156,7 @@ public class MainActivity extends BaseActivity {
             HashMap<String, String> itemMap = (HashMap<String, String>) listView.getItemAtPosition(i);
             String title = itemMap.get("title").replaceAll(":", "").replaceAll(" ", "");
             String text = itemMap.get("text");
-            // 将ClipData内容放到系统剪贴板里。
-            clipboardManager.setPrimaryClip(ClipData.newPlainText("Label", text));
             setting(title, text);
-            Toast.makeText(this, title + " 已复制到粘贴板！", Toast.LENGTH_SHORT).show();
             return true;
         });
         // 活动事件
@@ -269,6 +295,7 @@ public class MainActivity extends BaseActivity {
                     editor.putString("AlmanacPosition", inValue);
                 } else if ("西历".equals(title)) {
                     editor.putString("AlmanacWesternCalendar", inValue);
+                    miui10Calendar.jumpDate(inValue.split(" ")[0]);
                 }
                 //完成提交
                 editor.commit();
@@ -285,9 +312,11 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("AlmanacWesternCalendar", DateTimeUtils.getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
+                String inValue = DateTimeUtils.getFormatDate("yyyy-MM-dd HH:mm:ss.SSS");
+                editor.putString("AlmanacWesternCalendar", inValue);
                 editor.putString("AlmanacPosition", "广东省 徐闻县");
                 editor.commit();
+                miui10Calendar.jumpDate(inValue.split(" ")[0]);
                 initAlmanac(false);
             }
         });
@@ -304,7 +333,15 @@ public class MainActivity extends BaseActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(title);
         builder.setMessage(text);
-        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("复制", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // 将ClipData内容放到系统剪贴板里。
+                clipboardManager.setPrimaryClip(ClipData.newPlainText("Label", text));
+                Toast.makeText(context, title + " 已复制到粘贴板！", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setPositiveButton("关闭", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
