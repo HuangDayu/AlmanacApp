@@ -107,7 +107,7 @@ public class MainActivity extends BaseActivity {
                     timeZoneDTO.setDay(localDate.getDayOfMonth());
                     timeZoneDTO = new TimeZoneDTO(timeZoneDTO);
                 }
-                almanacDTO = AlmanacUtils.dayCalendar(timeZoneDTO);
+                almanacDTO = AlmanacUtils.ofDay(timeZoneDTO);
                 refreshAdapter();
                 if (almanacDTO != null && almanacDTO.getSolarTermDTO() != null && almanacDTO.getSolarTermDTO().getAfterDay() != null && almanacDTO.getSolarTermDTO().getAfterDay() == 0) {
                     solartermsBackground.setIndex(almanacDTO.getSolarTermDTO().getIndex());
@@ -198,7 +198,7 @@ public class MainActivity extends BaseActivity {
 
     private void initAlmanac(boolean now) {
         timeZoneDTO = getTimeZoneDTO(now);
-        almanacDTO = AlmanacUtils.dayCalendar(timeZoneDTO);
+        almanacDTO = AlmanacUtils.ofDay(timeZoneDTO);
         refreshAdapter();
     }
 
