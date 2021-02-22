@@ -17,7 +17,9 @@
         <receiver android:name=".widget.WidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-                <action android:name="com.lyl.widget.UPDATE_ALL"/>
+                <action android:name="cn.huangdayu.almanac.widget.TODAY"/>
+                <action android:name="cn.huangdayu.almanac.widget.AFTER_DAY"/>
+                <action android:name="cn.huangdayu.almanac.widget.BEFORE_DAY"/>
             </intent-filter>
             <meta-data
                     android:name="android.appwidget.provider"

@@ -40,10 +40,10 @@
                 android:layout_marginLeft="30dp"
                 android:background="@drawable/button_drawable"
                 android:textColor="@color/N_white"
-                android:text="前一天"/>
+                android:text="昨天"/>
 
         <TextView
-                android:id="@+id/widget_txt"
+                android:id="@+id/widget_txt_today"
                 android:layout_width="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
@@ -59,7 +59,7 @@
                 android:layout_marginRight="30dp"
                 android:background="@drawable/button_drawable"
                 android:textColor="@color/N_white"
-                android:text="后一天"/>
+                android:text="明天"/>
 
     </LinearLayout>
 

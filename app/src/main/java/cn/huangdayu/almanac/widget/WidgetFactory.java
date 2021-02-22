@@ -1,10 +1,12 @@
 package cn.huangdayu.almanac.widget;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 import cn.huangdayu.almanac.R;
+import cn.huangdayu.almanac.activity.MainActivity;
 import cn.huangdayu.almanac.context.AlmanacContext;
 
 import java.util.ArrayList;
@@ -17,11 +19,11 @@ import java.util.Map;
  */
 public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
 
-    private final Context mContext;
+    private final Context context;
     private final List<Map<String, String>> adapterArrayList = new ArrayList<>();
 
     public WidgetFactory(Context context, Intent intent) {
-        mContext = context;
+        this.context = context;
     }
 
     /**
@@ -74,21 +76,11 @@ public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
         }
         Map<String, String> content = adapterArrayList.get(position);
         // 创建在当前索引位置要显示的View
-        final RemoteViews remoteViews = new RemoteViews(mContext.getPackageName(), R.layout.activity_almanac_item);
+        final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.activity_almanac_item);
 
         // 设置要显示的内容
         remoteViews.setTextViewText(R.id.almanac_item_title, content.get("title"));
         remoteViews.setTextViewText(R.id.almanac_item_text, content.get("text"));
-
-
-        // 填充Intent，填充在AppWdigetProvider中创建的PendingIntent
-        Intent titleIntent = new Intent();
-        titleIntent.putExtra("content", content.get("title"));
-        remoteViews.setOnClickFillInIntent(R.id.almanac_item_title, titleIntent);
-
-        Intent textIntent = new Intent();
-        textIntent.putExtra("content", content.get("text"));
-        remoteViews.setOnClickFillInIntent(R.id.almanac_item_text, textIntent);
 
         return remoteViews;
     }
@@ -102,7 +94,7 @@ public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
     }
 
     /**
-     * 不同View定义的数量。默认为1（本人一直在使用默认值）
+     * 不同View定义的数量。默认为1
      */
     @Override
     public int getViewTypeCount() {
