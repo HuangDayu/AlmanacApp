@@ -1,19 +1,13 @@
 package cn.huangdayu.almanac.widget;
 
-import android.app.Service;
 import android.content.Intent;
-import android.os.IBinder;
 import android.widget.RemoteViewsService;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
- * 控制 桌面小部件 更新
- * Created by lyl on 2017/8/23.
+ * @author huangdayu create at 2021/2/22 10:59
  */
 public class WidgetService extends RemoteViewsService {
 
@@ -22,7 +16,7 @@ public class WidgetService extends RemoteViewsService {
     // 周期性更新 widget 的周期
     private static final int UPDATE_TIME = 1000;
 
-    private Timer mTimer = new Timer();
+    private Timer timer = new Timer();
     private TimerTask mTimerTask;
 //    private ScheduledExecutorService executorService;
 
@@ -52,7 +46,7 @@ public class WidgetService extends RemoteViewsService {
                 sendBroadcast(updateIntent);
             }
         };
-        mTimer.schedule(mTimerTask, 1000, UPDATE_TIME);
+        timer.schedule(mTimerTask, 1000, UPDATE_TIME);
     }
 
     @Override
@@ -64,10 +58,10 @@ public class WidgetService extends RemoteViewsService {
     public void onDestroy() {
         super.onDestroy();
         mTimerTask.cancel();
-        mTimer.cancel();
+        timer.cancel();
     }
 
-    /*
+    /**
      *  服务开始时，即调用startService()时，onStartCommand()被执行。
      *
      *  这个整形可以有四个返回值：start_sticky、start_no_sticky、START_REDELIVER_INTENT、START_STICKY_COMPATIBILITY。

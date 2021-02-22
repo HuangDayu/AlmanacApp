@@ -20,14 +20,18 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Created by lyl on 2017/8/23.
+ * @author huangdayu create at 2021/2/22 10:59
  */
-
 public class WidgetProvider extends AppWidgetProvider {
 
-    // 更新 widget 的广播对应的action
+    /**
+     * 更新 widget 的广播对应的action
+     */
     private final String ACTION_UPDATE_ALL = "cn.huangdayu.almanac.widget.UPDATE_ALL";
-    // 保存 widget 的id的HashSet，每新建一个 widget 都会为该 widget 分配一个 id。
+
+    /**
+     * 保存 widget 的id的HashSet，每新建一个 widget 都会为该 widget 分配一个 id。
+     */
     private static Set idsSet = new HashSet();
 
     public static int mIndex;
