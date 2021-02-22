@@ -1,26 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="cn.huangdayu.almanac">
+          package="cn.huangdayu.almanac">
 
     <!--android:theme="@android:style/Theme.NoTitleBar"-->
     <!--android:theme="@style/AppTheme"-->
     <!--@android:style/Theme.NoTitleBar-->
     <!--@android:style/Theme.Translucent.NoTitleBar-->
     <application
-        android:allowBackup="true"
-        android:icon="@mipmap/alamnac_logo"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+            android:allowBackup="true"
+            android:icon="@mipmap/alamnac_logo"
+            android:label="@string/app_name"
+            android:supportsRtl="true"
+            android:theme="@style/AppTheme">
+
+        <!-- 声明widget对应的AppWidgetProvider -->
+        <receiver android:name=".widget.WidgetProvider">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.lyl.widget.UPDATE_ALL"/>
+            </intent-filter>
+            <meta-data
+                    android:name="android.appwidget.provider"
+                    android:resource="@xml/widget_listview_info"/>
+        </receiver>
+
+        <!-- 用来计时，发送 通知桌面部件更新 -->
+        <service android:name=".widget.WidgetService"
+                 android:permission="android.permission.BIND_REMOTEVIEWS">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APP_WIDGET_SERVICE" />
+            </intent-filter>
+        </service>
+
+        <!-- 注册默认activity -->
         <activity android:name="cn.huangdayu.almanac.activity.MainActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
     </application>
 
-<!--    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />-->
+    <!--    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />-->
+    <!--    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />-->
 
 </manifest>

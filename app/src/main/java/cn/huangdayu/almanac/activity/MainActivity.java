@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.*;
 
 import cn.huangdayu.almanac.R;
+import cn.huangdayu.almanac.context.AlmanacContext;
 import cn.huangdayu.almanac.dto.AlmanacDTO;
 import cn.huangdayu.almanac.dto.MoonPhaseDTO;
 import cn.huangdayu.almanac.dto.SolarTermDTO;
@@ -34,7 +35,7 @@ import java.util.*;
 
 public class MainActivity extends BaseActivity {
 
-    private final List<Map<String, Object>> arrayList = new ArrayList<>();
+    private final List<Map<String, String>> arrayList = new ArrayList<>();
 
     /**
      * 获取剪贴板管理器
@@ -47,8 +48,6 @@ public class MainActivity extends BaseActivity {
     private Context context;
     private CalendarBackground numberBackground;
     private SolartermsBackgroundImpl solartermsBackground;
-    private TimeZoneDTO timeZoneDTO;
-    private AlmanacDTO almanacDTO;
 
 
     @Override
@@ -90,27 +89,25 @@ public class MainActivity extends BaseActivity {
             }
         });
 
-        final boolean[] cleanBackground = {true};
-
         /**
          * 单选
          */
         miui10Calendar.setOnCalendarChangedListener(new OnCalendarChangedListener() {
             @Override
             public void onCalendarChange(BaseCalendar baseCalendar, int year, int month, LocalDate localDate, DateChangeBehavior dateChangeBehavior) {
-                if (timeZoneDTO == null) {
-                    timeZoneDTO = getTimeZoneDTO(true);
+                if (AlmanacContext.getTimeZoneDTO() == null) {
+                            AlmanacContext.setTimeZoneDTO(getTimeZoneDTO(true));
                 } else {
                     Log.d(TAG, "选中日期: " + localDate);
+                    TimeZoneDTO timeZoneDTO = AlmanacContext.getTimeZoneDTO();
                     timeZoneDTO.setYear(localDate.getYear());
                     timeZoneDTO.setMonth(localDate.getMonthOfYear());
                     timeZoneDTO.setDay(localDate.getDayOfMonth());
-                    timeZoneDTO = new TimeZoneDTO(timeZoneDTO);
+                    AlmanacContext.setTimeZoneDTO(new TimeZoneDTO(timeZoneDTO));
                 }
-                almanacDTO = AlmanacUtils.ofDay(timeZoneDTO);
                 refreshAdapter();
-                if (almanacDTO != null && almanacDTO.getSolarTermDTO() != null && almanacDTO.getSolarTermDTO().getAfterDay() != null && almanacDTO.getSolarTermDTO().getAfterDay() == 0) {
-                    solartermsBackground.setIndex(almanacDTO.getSolarTermDTO().getIndex());
+                if (AlmanacContext.getAlmanacDTO() != null && AlmanacContext.getAlmanacDTO().getSolarTermDTO() != null && AlmanacContext.getAlmanacDTO().getSolarTermDTO().getAfterDay() != null && AlmanacContext.getAlmanacDTO().getSolarTermDTO().getAfterDay() == 0) {
+                    solartermsBackground.setIndex(AlmanacContext.getAlmanacDTO().getSolarTermDTO().getIndex());
                     miui10Calendar.setMonthCalendarBackground(solartermsBackground);
                 } else {
                     miui10Calendar.setMonthCalendarBackground(numberBackground);
@@ -197,8 +194,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void initAlmanac(boolean now) {
-        timeZoneDTO = getTimeZoneDTO(now);
-        almanacDTO = AlmanacUtils.ofDay(timeZoneDTO);
+        AlmanacContext.setTimeZoneDTO(getTimeZoneDTO(now));
         refreshAdapter();
     }
 
@@ -227,8 +223,8 @@ public class MainActivity extends BaseActivity {
      */
     private void refreshAdapter() {
         arrayList.clear();
-        almanacDTO.toMap().forEach((k, v) -> {
-            Map<String, Object> item = new HashMap<>();
+        AlmanacContext.getAlmanacDTO().toMap().forEach((k, v) -> {
+            Map<String, String> item = new HashMap<>();
             item.put("title", " " + k + " : ");
             item.put("text", v);
             arrayList.add(item);
@@ -254,13 +250,13 @@ public class MainActivity extends BaseActivity {
         if (!keys.contains(title)) {
             if ("节气".equals(title)) {
                 StringBuilder solarTermText = new StringBuilder();
-                for (SolarTermDTO solarTermDTO : almanacDTO.getSolarTermDTO().getNext()) {
+                for (SolarTermDTO solarTermDTO : AlmanacContext.getAlmanacDTO().getSolarTermDTO().getNext()) {
                     solarTermText.append(solarTermDTO.getDetails()).append("\n");
                 }
                 internetDialog("往后节气", solarTermText.toString());
             } else if ("月相".equals(title)) {
                 StringBuilder moonPhaseText = new StringBuilder();
-                for (MoonPhaseDTO moonPhaseDTO : almanacDTO.getMoonPhaseDTO().getNext()) {
+                for (MoonPhaseDTO moonPhaseDTO : AlmanacContext.getAlmanacDTO().getMoonPhaseDTO().getNext()) {
                     moonPhaseText.append(moonPhaseDTO.getDetails()).append("\n");
                 }
                 internetDialog("往后月相", moonPhaseText.toString());
