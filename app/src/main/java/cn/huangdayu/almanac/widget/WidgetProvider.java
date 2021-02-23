@@ -16,6 +16,7 @@ import cn.huangdayu.almanac.context.AlmanacContext;
 import cn.huangdayu.almanac.dto.TimeZoneDTO;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -26,7 +27,8 @@ public class WidgetProvider extends AppWidgetProvider {
     public static final String ACTION_TODAY = "cn.huangdayu.almanac.widget.TODAY",
             ACTION_AFTER_DAY = "cn.huangdayu.almanac.widget.AFTER_DAY",
             ACTION_BEFORE_DAY = "cn.huangdayu.almanac.widget.BEFORE_DAY",
-            ACTION_ITEM_ONCLICK = "cn.huangdayu.almanac.widget.ITEM_ONCLICK";
+            ACTION_ITEM_ONCLICK = "cn.huangdayu.almanac.widget.ITEM_ONCLICK",
+            ACTION_UPDATE_ALL = "cn.huangdayu.almanac.widget.UPDATE_ALL";
 
     private static final Set<Integer> WIDGET_IDS = new HashSet<>();
 
@@ -35,13 +37,13 @@ public class WidgetProvider extends AppWidgetProvider {
     public void onReceive(final Context context, Intent intent) {
         super.onReceive(context, intent);
         final String action = intent.getAction();
-        Toast.makeText(context, action, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(context, action, Toast.LENGTH_SHORT).show();
         switch (action) {
             case ACTION_BEFORE_DAY:
                 TimeZoneDTO timeZoneDTO = AlmanacContext.getTimeZoneDTO();
                 timeZoneDTO.setDay(timeZoneDTO.getDay() - 1);
                 AlmanacContext.setTimeZoneDTO(new TimeZoneDTO(timeZoneDTO));
-                refreshWidget(context);
+                refreshWidget(context, true, true);
                 break;
             case ACTION_TODAY:
                 break;
@@ -49,23 +51,38 @@ public class WidgetProvider extends AppWidgetProvider {
                 TimeZoneDTO timeZoneDTO1 = AlmanacContext.getTimeZoneDTO();
                 timeZoneDTO1.setDay(timeZoneDTO1.getDay() + 1);
                 AlmanacContext.setTimeZoneDTO(new TimeZoneDTO(timeZoneDTO1));
-                refreshWidget(context);
+                refreshWidget(context, true, true);
+                break;
+            case ACTION_ITEM_ONCLICK:
+                Toast.makeText(context, intent.getStringExtra("content"), Toast.LENGTH_SHORT).show();
+                break;
+            case ACTION_UPDATE_ALL:
+                refreshWidget(context, true, true);
                 break;
             default:
+                refreshWidget(context, false, true);
                 break;
         }
     }
 
-    private void refreshWidget(Context context) {
+    private void refreshWidget(Context context, boolean updateListView, boolean updateTextView) {
+        if (!updateListView && !updateTextView) {
+            return;
+        }
         // 刷新Widget
         final AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
         final ComponentName componentName = new ComponentName(context, WidgetProvider.class);
 
-//        final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_almanac_layout);
-//        remoteViews.setTextViewText(R.id.widget_txt_today, AlmanacContext.getAlmanacDTO().getTimeZoneDTO().getDateInfo());
+        if (updateListView) {
+            // 会调用WidgetFactory中RemoteViewsFactory的onDataSetChanged()方法
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetManager.getAppWidgetIds(componentName), R.id.widget_listview);
+        }
 
-        // 会调用WidgetFactory中RemoteViewsFactory的onDataSetChanged()方法
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetManager.getAppWidgetIds(componentName), R.id.widget_listview);
+        if (updateTextView && AlmanacContext.getAlmanacDTO() != null) {
+            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_almanac_layout);
+            remoteViews.setTextViewText(R.id.widget_txt_today, AlmanacContext.getAlmanacDTO().getTimeZoneDTO().getDateInfo());
+            appWidgetManager.updateAppWidget(componentName, remoteViews);
+        }
     }
 
 

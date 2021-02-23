@@ -11,42 +11,23 @@ import java.util.TimerTask;
  */
 public class WidgetService extends RemoteViewsService {
 
-    // 更新 widget 的广播对应的 action
-    private final String ACTION_UPDATE_ALL = "cn.huangdayu.almanac.widget.UPDATE_ALL";
-    // 周期性更新 widget 的周期
-    private static final int UPDATE_TIME = 1000;
 
     private Timer timer = new Timer();
-    private TimerTask mTimerTask;
-//    private ScheduledExecutorService executorService;
+    private TimerTask timerTask;
 
 
     @Override
     public void onCreate() {
         super.onCreate();
-
-//        if (executorService == null) {
-//            //org.apache.commons.lang3.concurrent.BasicThreadFactory
-//            executorService = new ScheduledThreadPoolExecutor(1,
-//                    new BasicThreadFactory.Builder().namingPattern("example-schedule-pool-%d").daemon(true).build());
-//        }
-//        executorService.scheduleAtFixedRate(new Runnable() {
-//            @Override
-//            public void run() {
-//                Intent updateIntent = new Intent(ACTION_UPDATE_ALL);
-//                sendBroadcast(updateIntent);
-//            }
-//        },0,UPDATE_TIME, TimeUnit.MICROSECONDS);
-
         // 每经过指定时间，发送一次广播
-        mTimerTask = new TimerTask() {
+        timerTask = new TimerTask() {
             @Override
             public void run() {
-                Intent updateIntent = new Intent(ACTION_UPDATE_ALL);
+                Intent updateIntent = new Intent(WidgetProvider.ACTION_UPDATE_ALL);
                 sendBroadcast(updateIntent);
             }
         };
-        timer.schedule(mTimerTask, 1000, UPDATE_TIME);
+        timer.schedule(timerTask, 1000, 1000);
     }
 
     @Override
@@ -57,7 +38,7 @@ public class WidgetService extends RemoteViewsService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mTimerTask.cancel();
+        timerTask.cancel();
         timer.cancel();
     }
 

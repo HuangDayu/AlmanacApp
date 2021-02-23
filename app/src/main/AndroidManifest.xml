@@ -21,6 +21,7 @@
                 <action android:name="cn.huangdayu.almanac.widget.AFTER_DAY"/>
                 <action android:name="cn.huangdayu.almanac.widget.BEFORE_DAY"/>
                 <action android:name="cn.huangdayu.almanac.widget.ITEM_ONCLICK"/>
+                <action android:name="cn.huangdayu.almanac.widget.UPDATE_ALL"/>
             </intent-filter>
             <meta-data
                     android:name="android.appwidget.provider"

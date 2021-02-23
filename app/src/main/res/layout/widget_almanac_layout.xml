@@ -50,7 +50,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:layout_height="wrap_content"
-                android:text="2021-02-22"
+                android:text="今天"
                 android:textSize="20dp"
                 android:textStyle="bold"/>
 
