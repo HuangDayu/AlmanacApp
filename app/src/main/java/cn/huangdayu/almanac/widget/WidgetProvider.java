@@ -12,6 +12,8 @@ import android.widget.RemoteViews;
 import android.widget.Toast;
 import cn.huangdayu.almanac.R;
 import cn.huangdayu.almanac.activity.MainActivity;
+import cn.huangdayu.almanac.context.AlmanacContext;
+import cn.huangdayu.almanac.dto.TimeZoneDTO;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,7 +25,8 @@ public class WidgetProvider extends AppWidgetProvider {
 
     public static final String ACTION_TODAY = "cn.huangdayu.almanac.widget.TODAY",
             ACTION_AFTER_DAY = "cn.huangdayu.almanac.widget.AFTER_DAY",
-            ACTION_BEFORE_DAY = "cn.huangdayu.almanac.widget.BEFORE_DAY";
+            ACTION_BEFORE_DAY = "cn.huangdayu.almanac.widget.BEFORE_DAY",
+            ACTION_ITEM_ONCLICK = "cn.huangdayu.almanac.widget.ITEM_ONCLICK";
 
     private static final Set<Integer> WIDGET_IDS = new HashSet<>();
 
@@ -33,15 +36,36 @@ public class WidgetProvider extends AppWidgetProvider {
         super.onReceive(context, intent);
         final String action = intent.getAction();
         Toast.makeText(context, action, Toast.LENGTH_SHORT).show();
-
         switch (action) {
             case ACTION_BEFORE_DAY:
-                break;
-            case ACTION_AFTER_DAY:
+                TimeZoneDTO timeZoneDTO = AlmanacContext.getTimeZoneDTO();
+                timeZoneDTO.setDay(timeZoneDTO.getDay() - 1);
+                AlmanacContext.setTimeZoneDTO(new TimeZoneDTO(timeZoneDTO));
+                refreshWidget(context);
                 break;
             case ACTION_TODAY:
                 break;
+            case ACTION_AFTER_DAY:
+                TimeZoneDTO timeZoneDTO1 = AlmanacContext.getTimeZoneDTO();
+                timeZoneDTO1.setDay(timeZoneDTO1.getDay() + 1);
+                AlmanacContext.setTimeZoneDTO(new TimeZoneDTO(timeZoneDTO1));
+                refreshWidget(context);
+                break;
+            default:
+                break;
         }
+    }
+
+    private void refreshWidget(Context context) {
+        // 刷新Widget
+        final AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        final ComponentName componentName = new ComponentName(context, WidgetProvider.class);
+
+//        final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_almanac_layout);
+//        remoteViews.setTextViewText(R.id.widget_txt_today, AlmanacContext.getAlmanacDTO().getTimeZoneDTO().getDateInfo());
+
+        // 会调用WidgetFactory中RemoteViewsFactory的onDataSetChanged()方法
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetManager.getAppWidgetIds(componentName), R.id.widget_listview);
     }
 
 
@@ -78,24 +102,22 @@ public class WidgetProvider extends AppWidgetProvider {
         ComponentName thisWidget = new ComponentName(context, WidgetProvider.class);
 
         // 创建一个RemoteView
-        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_listview);
+        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_almanac_layout);
 
         // 把这个Widget绑定到RemoteViewsService
         Intent intent = new Intent(context, WidgetService.class);
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetIds[0]);
-
         // 设置适配器
-        remoteViews.setRemoteAdapter(R.id.almanac_widget_listview, intent);
-
+        remoteViews.setRemoteAdapter(R.id.widget_listview, intent);
         // 设置当显示的widget_list为空显示的View
-        remoteViews.setEmptyView(R.id.almanac_widget_listview, R.layout.widget_nono_data);
+        remoteViews.setEmptyView(R.id.widget_listview, R.layout.widget_nono_data);
 
         // listview 点击
         Intent clickIntent = new Intent(context, WidgetProvider.class);
-        clickIntent.setAction(ACTION_AFTER_DAY);
+        clickIntent.setAction(ACTION_ITEM_ONCLICK);
         clickIntent.setData(Uri.parse(clickIntent.toUri(Intent.URI_INTENT_SCHEME)));
         PendingIntent pendingIntentTemplate = PendingIntent.getBroadcast(context, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        remoteViews.setPendingIntentTemplate(R.id.almanac_widget_listview, pendingIntentTemplate);
+        remoteViews.setPendingIntentTemplate(R.id.widget_listview, pendingIntentTemplate);
 
         // 日期textview点击
         remoteViews.setOnClickPendingIntent(R.id.widget_txt_today, getTodayPendingIntent(context));
@@ -113,7 +135,7 @@ public class WidgetProvider extends AppWidgetProvider {
         Intent intent = new Intent(context, MainActivity.class);
         intent.setAction(ACTION_TODAY);
         intent.addCategory(Intent.CATEGORY_ALTERNATIVE);
-        intent.putExtra("dateTime","2021-02-22" );
+        intent.putExtra("dateTime", "2021-02-22");
         return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 

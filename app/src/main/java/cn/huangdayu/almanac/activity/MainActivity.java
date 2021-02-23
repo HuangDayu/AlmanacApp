@@ -34,9 +34,6 @@ import org.joda.time.LocalDate;
 import java.util.*;
 
 public class MainActivity extends BaseActivity {
-
-    private final List<Map<String, String>> arrayList = new ArrayList<>();
-
     /**
      * 获取剪贴板管理器
      */
@@ -96,7 +93,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onCalendarChange(BaseCalendar baseCalendar, int year, int month, LocalDate localDate, DateChangeBehavior dateChangeBehavior) {
                 if (AlmanacContext.getTimeZoneDTO() == null) {
-                            AlmanacContext.setTimeZoneDTO(getTimeZoneDTO(true));
+                    AlmanacContext.setTimeZoneDTO(getTimeZoneDTO(true));
                 } else {
                     Log.d(TAG, "选中日期: " + localDate);
                     TimeZoneDTO timeZoneDTO = AlmanacContext.getTimeZoneDTO();
@@ -222,17 +219,8 @@ public class MainActivity extends BaseActivity {
      * 刷新适配器
      */
     private void refreshAdapter() {
-        arrayList.clear();
-        AlmanacContext.getAlmanacDTO().toMap().forEach((k, v) -> {
-            Map<String, String> item = new HashMap<>();
-            item.put("title", " " + k + " : ");
-            item.put("text", v);
-            arrayList.add(item);
-        });
-//        ArrayAdapter<Map<String, Object>> adapter = new ArrayAdapter<>(this,
-//                R.layout.activity_almanac_item,
-//                arrayList);
-        SimpleAdapter adapter = new SimpleAdapter(this, arrayList,
+//        ArrayAdapter<Map<String, Object>> adapter = new ArrayAdapter<>(this, R.layout.activity_almanac_item, arrayList);
+        SimpleAdapter adapter = new SimpleAdapter(this, AlmanacContext.getAdapters(),
                 R.layout.activity_almanac_item, new String[]{"title", "text"}, new int[]{
                 R.id.almanac_item_title, R.id.almanac_item_text});
         listView.setAdapter(adapter);

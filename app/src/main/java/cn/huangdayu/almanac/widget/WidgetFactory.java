@@ -1,12 +1,10 @@
 package cn.huangdayu.almanac.widget;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 import cn.huangdayu.almanac.R;
-import cn.huangdayu.almanac.activity.MainActivity;
 import cn.huangdayu.almanac.context.AlmanacContext;
 
 import java.util.ArrayList;
@@ -16,11 +14,11 @@ import java.util.Map;
 
 /**
  * @author huangdayu create at 2021/2/22 10:59
+ * @sample <a>https://github.com/Tamicer/ListWidget</a>
  */
 public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
 
     private final Context context;
-    private final List<Map<String, String>> adapterArrayList = new ArrayList<>();
 
     public WidgetFactory(Context context, Intent intent) {
         this.context = context;
@@ -32,13 +30,7 @@ public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
      */
     @Override
     public void onCreate() {
-        adapterArrayList.clear();
-        AlmanacContext.getAlmanacDTO().toMap().forEach((k, v) -> {
-            Map<String, String> item = new HashMap<>();
-            item.put("title", " " + k + " : ");
-            item.put("text", v);
-            adapterArrayList.add(item);
-        });
+
     }
 
     /**
@@ -55,7 +47,7 @@ public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
      */
     @Override
     public void onDestroy() {
-        adapterArrayList.clear();
+        AlmanacContext.getAdapters().clear();
     }
 
     /**
@@ -63,7 +55,7 @@ public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
      */
     @Override
     public int getCount() {
-        return adapterArrayList.size();
+        return AlmanacContext.getAdapters().size();
     }
 
     /**
@@ -71,10 +63,10 @@ public class WidgetFactory implements RemoteViewsService.RemoteViewsFactory {
      */
     @Override
     public RemoteViews getViewAt(int position) {
-        if (position < 0 || position >= adapterArrayList.size()) {
+        if (position < 0 || position >= AlmanacContext.getAdapters().size()) {
             return null;
         }
-        Map<String, String> content = adapterArrayList.get(position);
+        Map<String, String> content = AlmanacContext.getAdapters().get(position);
         // 创建在当前索引位置要显示的View
         final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.activity_almanac_item);
 

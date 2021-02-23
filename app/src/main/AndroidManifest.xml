@@ -20,6 +20,7 @@
                 <action android:name="cn.huangdayu.almanac.widget.TODAY"/>
                 <action android:name="cn.huangdayu.almanac.widget.AFTER_DAY"/>
                 <action android:name="cn.huangdayu.almanac.widget.BEFORE_DAY"/>
+                <action android:name="cn.huangdayu.almanac.widget.ITEM_ONCLICK"/>
             </intent-filter>
             <meta-data
                     android:name="android.appwidget.provider"
@@ -30,7 +31,7 @@
         <service android:name=".widget.WidgetService"
                  android:permission="android.permission.BIND_REMOTEVIEWS">
             <intent-filter>
-                <action android:name="android.appwidget.action.APP_WIDGET_SERVICE" />
+                <action android:name="android.appwidget.action.APP_WIDGET_SERVICE"/>
             </intent-filter>
         </service>
 

@@ -37,34 +37,38 @@
                 android:id="@+id/widget_btn_before"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="30dp"
+                android:layout_marginLeft="15dp"
                 android:background="@drawable/button_drawable"
                 android:textColor="@color/N_white"
+                android:textSize="20dp"
+                android:textStyle="bold"
                 android:text="昨天"/>
 
         <TextView
                 android:id="@+id/widget_txt_today"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:layout_height="wrap_content"
                 android:text="2021-02-22"
-                android:textSize="15dp"
+                android:textSize="20dp"
                 android:textStyle="bold"/>
 
         <Button
                 android:id="@+id/widget_btn_after"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="30dp"
+                android:layout_marginRight="15dp"
                 android:background="@drawable/button_drawable"
                 android:textColor="@color/N_white"
+                android:textSize="20dp"
+                android:textStyle="bold"
                 android:text="明天"/>
 
     </LinearLayout>
 
     <ListView
-            android:id="@+id/almanac_widget_listview"
+            android:id="@+id/widget_listview"
             android:layout_marginTop="1dp"
             android:layout_marginBottom="10dip"
             android:layout_width="match_parent"
